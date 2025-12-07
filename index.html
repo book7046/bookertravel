@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>旅遊手帳 App (Smart Weather Ver.)</title>
+    <title>旅遊手帳 App (v3.6 Safe Mode)</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Zen+Maru+Gothic:wght@500;700&family=Shippori+Mincho:wght@500;700&display=swap" rel="stylesheet">
     <style>
         /* --- THEME VARIABLES --- */
@@ -19,11 +19,12 @@
             --text-light: #8a8077;
             --radius: 16px;
             --shadow: 0 4px 12px rgba(94, 82, 75, 0.08);
+            --danger: #ff6b6b;
         }
 
         [data-theme="matcha"] { --bg-color: #e1e8e1; --paper-color: #f4f9f4; --primary: #88a886; --secondary: #e6f0e6; --header-grad-1: #fff; --header-grad-2: #e6f0e6; --accent: #d4a373; --text-main: #4b5e4b; }
         [data-theme="ocean"] { --bg-color: #e1e6e8; --paper-color: #f0f8ff; --primary: #89c2d9; --secondary: #e0f7fa; --header-grad-1: #fff; --header-grad-2: #e0f7fa; --accent: #ffb7b2; --text-main: #3e505b; }
-        [data-theme="dark"] { --bg-color: #1a1a1a; --paper-color: #2d2d2d; --primary: #bb86fc; --secondary: #333; --header-grad-1: #2d2d2d; --header-grad-2: #2d2d2d; --accent: #03dac6; --text-main: #e0e0e0; --text-light: #aaa; --shadow: 0 4px 12px rgba(0,0,0,0.5); }
+        [data-theme="dark"] { --bg-color: #1a1a1a; --paper-color: #2d2d2d; --primary: #bb86fc; --secondary: #333; --header-grad-1: #2d2d2d; --header-grad-2: #2d2d2d; --accent: #03dac6; --text-main: #e0e0e0; --text-light: #aaa; --shadow: 0 4px 12px rgba(0,0,0,0.5); --danger: #ff4444; }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--bg-color); font-family: 'Zen Maru Gothic', 'Noto Sans TC', sans-serif; margin: 0; color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; transition: background 0.3s; }
@@ -52,7 +53,7 @@
 
         /* UI Elements */
         .btn-edit { background: none; border: none; font-size: 16px; cursor: pointer; opacity: 0.6; padding: 5px; }
-        .btn-delete-icon { background: none; border: none; font-size: 18px; cursor: pointer; opacity: 0.8; color: #ff6b6b; padding: 8px; display: flex; align-items: center; justify-content: center; }
+        .btn-delete-icon { background: none; border: none; font-size: 18px; cursor: pointer; opacity: 0.8; color: var(--danger); padding: 8px; display: flex; align-items: center; justify-content: center; }
         
         /* Modal */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; display: none; justify-content: center; align-items: center; }
@@ -66,9 +67,12 @@
         .form-textarea { resize: vertical; min-height: 80px; }
         
         .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-        .btn-save { background: var(--primary); color: white; border: none; padding: 8px 20px; border-radius: 8px; font-weight: bold; }
-        .btn-cancel { background: #eee; color: #666; border: none; padding: 8px 20px; border-radius: 8px; }
+        .btn-save { background: var(--primary); color: white; border: none; padding: 8px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-cancel { background: #eee; color: #666; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; }
         [data-theme="dark"] .btn-cancel { background: #555; color: #ccc; }
+        .btn-danger { background: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: opacity 0.2s; }
+        .btn-danger:hover { opacity: 0.9; }
+        .btn-secondary { background: var(--secondary); color: var(--text-main); border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); }
 
         /* Cards & Lists */
         .card { background: #fff; border-radius: var(--radius); margin-bottom: 24px; box-shadow: var(--shadow); overflow: hidden; position: relative; padding: 16px; }
@@ -93,6 +97,15 @@
         .btn-link { background: #fce4ec; color: #d81b60; }
         .btn-add-block { width: 100%; padding: 12px; border: 2px dashed #ccc; background: none; border-radius: 12px; color: var(--text-light); cursor: pointer; font-weight: bold; text-align: center; }
         
+        /* Weather Styles */
+        .weather-scroll-container { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; }
+        .weather-day-item { flex: 0 0 auto; min-width: 105px; text-align: center; padding: 10px; background: rgba(0,0,0,0.03); border-radius: 12px; border: 1px solid rgba(0,0,0,0.05); }
+        .weather-day-item div { margin-bottom: 3px; }
+        .weather-icon-lg { font-size: 28px; margin: 5px 0; }
+        .clothing-advice { font-size: 11px; color: var(--text-light); background: rgba(255,255,255,0.5); padding: 2px 5px; border-radius: 8px; display: inline-block; margin-top: 4px; }
+        [data-theme="dark"] .weather-day-item { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.1); }
+        [data-theme="dark"] .clothing-advice { background: rgba(0,0,0,0.3); color: #ccc; }
+        
         /* Checkbox & Tags */
         .tag-group { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
         .tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #eee; color: #666; }
@@ -102,7 +115,7 @@
         
         /* Edit Elements */
         .event-edit-row { background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid #eee; position: relative; }
-        .btn-remove-event { position: absolute; top: 5px; right: 5px; color: #ff6b6b; background: none; border: none; font-size: 16px; cursor: pointer; }
+        .btn-remove-event { position: absolute; top: 5px; right: 5px; color: var(--danger); background: none; border: none; font-size: 16px; cursor: pointer; }
         [data-theme="dark"] .event-edit-row { background: #444; border-color: #555; }
 
         /* Theme Grid */
@@ -114,7 +127,7 @@
         .calculator-area { background: var(--secondary); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.05); }
         .calc-display { font-family: monospace; font-size: 24px; text-align: right; margin-top: 5px; color: var(--text-main); font-weight: bold; }
         .calc-sub { font-size: 13px; text-align: right; color: var(--text-light); height: 20px; }
-        .expense-thumb { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; background: #eee; flex-shrink: 0; cursor: pointer; }
+        .expense-thumb { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; background: #eee; flex-shrink: 0; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; }
         
         /* Transport & Tickets */
         .transport-card { background: #fff; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: var(--shadow); position: relative; border-left: 5px solid var(--primary); }
@@ -145,7 +158,8 @@
         </div>
         <div class="subtitle"><span id="app-dates" class="header-editable" onclick="editHeader()">日期 | 航班資訊</span></div>
         <div class="nav-tabs">
-            <div class="tab active" onclick="switchTab('booking')">預訂</div>
+            <!-- Ensure Booking is first and default -->
+            <div class="tab active" onclick="switchTab('booking')">首頁 / 預訂</div>
             <div class="tab" onclick="switchTab('itinerary')">行程</div>
             <div class="tab" onclick="switchTab('transport')">交通</div>
             <div class="tab" onclick="switchTab('tickets')">票券</div>
@@ -159,17 +173,38 @@
 
     <!-- VIEWS -->
     <div id="booking-view" class="content-view active">
+        <!-- New Weather Card -->
+        <div class="card" id="home-weather-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3>🌤️ 當地天氣</h3>
+                <div style="font-size:12px; color:var(--text-light);"><span id="weather-loc-name">載入中...</span></div>
+            </div>
+            <div id="weekly-weather-container" class="weather-scroll-container">
+                <div style="width:100%; text-align:center; padding:10px; color:#aaa;">請先設定行程第一天地點以顯示天氣</div>
+            </div>
+            <!-- Legend -->
+            <div style="text-align:right; font-size:10px; color:var(--text-light); margin-top:5px;">
+                * 體感溫度為估算值，穿衣請依個人體質調整
+            </div>
+        </div>
+
         <div class="card">
             <div style="display:flex; justify-content:space-between;"><h3>✈️ 航班資訊</h3><button onclick="editBookingText('flights')" class="btn-edit">✏️</button></div>
             <div id="booking-flights" style="white-space: pre-wrap; font-size:14px; line-height:1.6;"></div>
         </div>
         <div class="card">
-            <div style="display:flex; justify-content:space-between; margin-bottom:12px;"><h3>🏨 住宿資訊</h3><button onclick="editBookingHotels()" class="btn-edit">✏️</button></div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+                <h3>🏨 住宿資訊</h3>
+            </div>
             <div id="booking-hotels-container"></div>
+            <button onclick="openHotelModal()" class="btn-add-block" style="margin-top:10px;">+ 新增住宿</button>
         </div>
     </div>
 
     <div id="itinerary-view" class="content-view">
+        <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+            <button onclick="copyItineraryText()" class="btn-secondary" style="font-size:12px; padding:6px 12px;">📋 複製行程文字</button>
+        </div>
         <div id="itinerary-container"></div>
         <button onclick="addDay()" class="btn-add-block">+ 新增一天</button>
         <div style="text-align:center; padding:10px; opacity:0.6; font-size:12px;">點擊日期右側 ✏️ 可修改行程與天氣</div>
@@ -272,9 +307,28 @@
                 <div class="theme-btn" style="background:#333; color:#fff;" onclick="setTheme('dark')">🌙 夜間模式</div>
             </div>
         </div>
+        
+        <!-- NEW: Full CSV Import/Export -->
         <div class="card">
-            <h3>⚙️ 資料管理</h3>
-            <button onclick="deleteCurrentTrip()" style="width:100%; padding:12px; background:#ff6b6b; color:white; border:none; border-radius:8px; font-weight:bold;">刪除此手帳 (Delete)</button>
+            <h3>📊 CSV 匯出 / 匯入 (Excel 編輯)</h3>
+            <div style="margin-bottom:10px; font-size:13px; color:var(--text-light);">
+                可將所有資料匯出為單一 CSV 檔，用 Excel 編輯後再貼回匯入。
+            </div>
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <button onclick="exportAllCSV()" class="btn-secondary" style="flex:1; background:#e3f2fd; color:#1565c0;">📤 匯出所有資料 (CSV)</button>
+            </div>
+            <button onclick="openImportCSVModal()" class="btn-add-block" style="border:1px dashed #999; color:#555;">📥 匯入 CSV 資料</button>
+        </div>
+
+        <!-- Backup & Restore -->
+        <div class="card">
+            <h3>💾 整機備份與還原</h3>
+            <div style="margin-bottom:10px; font-size:13px; color:var(--text-light);">將所有資料封存為檔案 (JSON)。</div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="downloadBackup()" class="btn-secondary" style="flex:1;">📤 匯出備份 (Export)</button>
+                <button onclick="document.getElementById('import-file').click()" class="btn-secondary" style="flex:1;">📥 匯入資料 (Import)</button>
+                <input type="file" id="import-file" style="display:none" accept=".json" onchange="restoreBackup(this)">
+            </div>
         </div>
     </div>
 </div>
@@ -307,7 +361,7 @@
     function showAlert(msg) { openModal("提示", `<div style="padding:10px;">${msg}</div>`, `<button onclick="closeModal()" class="btn-save">確定</button>`); }
     function openConfirm(msg, callback) {
         confirmCallback = callback;
-        openModal("確認", `<div style="padding:10px;">${msg}</div>`, `<button onclick="closeModal()" class="btn-cancel">取消</button><button onclick="if(confirmCallback) confirmCallback(); closeModal();" class="btn-save" style="background:#ff6b6b;">確定</button>`);
+        openModal("確認", `<div style="padding:10px;">${msg}</div>`, `<button onclick="closeModal()" class="btn-cancel">取消</button><button onclick="if(confirmCallback) confirmCallback(); closeModal();" class="btn-save" style="background:var(--danger);">確定</button>`);
     }
 
     /* --- DATA MANAGEMENT (MULTI-TRIP) --- */
@@ -346,24 +400,161 @@
         companions: ["我"], expenses: [], transport: [], tickets: []
     };
 
-    function initApp() {
-        if (tripIndex.length === 0) {
-            const oldData = localStorage.getItem('kyushuApp_v10');
-            if (oldData) {
-                const parsed = JSON.parse(oldData);
-                const newId = 'trip_' + Date.now();
-                const migratedData = { ...DEFAULT_DATA_TEMPLATE, ...parsed };
-                if(!migratedData.transport) migratedData.transport = [];
-                if(!migratedData.tickets) migratedData.tickets = [];
-                tripIndex.push({ id: newId, title: parsed.title || '我的旅程' });
-                localStorage.setItem('trip_data_' + newId, JSON.stringify(migratedData));
-                localStorage.setItem('travel_app_index', JSON.stringify(tripIndex));
-                currentTripId = newId;
-            } else {
-                createNewTrip(true, "🌸 九州賞櫻手帳");
-                return;
+    // CANADA TRIP DATA EXTRACTED FROM PDF
+    const CANADA_DATA_TEMPLATE = {
+        title: "🇨🇦 2025 加拿大極光之旅",
+        dates: "2025.01.23 - 02.01 | 中華航空+加拿大航空",
+        theme: 'ocean',
+        rates: { CAD: 23.5, TWD: 1, USD: 32, JPY: 0.21 }, // Approx rates
+        activeCurrencies: ["CAD", "TWD", "USD"],
+        transportTypes: ['飛機','巴士','接駁車','Uber','輕軌'],
+        booking: {
+            flights: "1/23 TPE->YVR (CI022) 23:35-23:55\n1/24 YVR->YYC (AC7762) 06:30-08:55\n1/27 YYC->YZF (WS0221) 11:15-13:40\n1/29 YZF->YVR (AC8479) 17:10-18:58\n2/01 YVR->TPE (CI031) 00:35-05:40(+1)",
+            hotels: [
+                { name: "Banff Park Lodge (班夫酒店)", desc: "1/24 - 1/26 (2晚) | 班夫", mapQuery: "501 Banff Avenue, Banff" },
+                { name: "Coast Calgary Downtown Hotel", desc: "1/26 - 1/27 (1晚) | 卡加利", mapQuery: "610 4th Avenue Southwest, Calgary" },
+                { name: "Quality Inn / Super 8", desc: "1/27 - 1/29 (2晚) | 黃刀鎮極光團", mapQuery: "Yellowknife, NT" },
+                { name: "溫哥華住宿", desc: "1/29 - 1/31 (2晚) | 溫哥華", mapQuery: "Vancouver, BC" }
+            ]
+        },
+        itinerary: [
+            {
+                date: "Day 0 (1/23)", weather: "✈️",
+                events: [
+                    { time: "23:35", title: "桃園機場起飛", desc: "CI022 -> 溫哥華", mapQuery: "Taoyuan Airport", weatherQuery: "" },
+                    { time: "23:55", title: "抵達溫哥華", desc: "當地時間 1/23 晚上", mapQuery: "YVR Airport", weatherQuery: "Vancouver" }
+                ]
+            },
+            {
+                date: "Day 1 (1/24)", weather: "❄️ 班夫",
+                events: [
+                    { time: "06:30", title: "飛往卡加利", desc: "AC7762, 08:55 抵達", mapQuery: "YVR Airport", weatherQuery: "" },
+                    { time: "14:30", title: "巴士前往班夫", desc: "FlixBus / Universal Coach", mapQuery: "Calgary", weatherQuery: "" },
+                    { time: "16:00", title: "抵達班夫", desc: "入住飯店", mapQuery: "Banff", weatherQuery: "Banff" }
+                ]
+            },
+            {
+                date: "Day 2 (1/25)", weather: "🏔️ 班夫",
+                events: [
+                    { time: "08:15", title: "野生動物小巴之旅", desc: "尋找麋鹿、大角羊。景點: 弓瀑布、驚喜角", mapQuery: "Banff Avenue", weatherQuery: "Banff" },
+                    { time: "13:12", title: "約翰斯頓峽谷冰上健行", desc: "Johnston Canyon Icewalk (4hr)", mapQuery: "Johnston Canyon", weatherQuery: "" }
+                ]
+            },
+            {
+                date: "Day 3 (1/26)", weather: "🚌 卡加利",
+                events: [
+                    { time: "11:00", title: "退房 / 自由活動", desc: "", mapQuery: "", weatherQuery: "" },
+                    { time: "14:30", title: "巴士返回卡加利", desc: "", mapQuery: "", weatherQuery: "" },
+                    { time: "16:00", title: "抵達卡加利", desc: "入住 Coast Calgary Hotel", mapQuery: "Coast Calgary Downtown Hotel", weatherQuery: "Calgary" }
+                ]
+            },
+            {
+                date: "Day 4 (1/27)", weather: "🌌 黃刀鎮",
+                events: [
+                    { time: "11:15", title: "飛往黃刀鎮", desc: "WS0221, 13:40 抵達", mapQuery: "Calgary Airport", weatherQuery: "" },
+                    { time: "22:00", title: "極光狩獵 (Aurora Hunting)", desc: "追極光 4小時", mapQuery: "Yellowknife", weatherQuery: "Yellowknife" }
+                ]
+            },
+            {
+                date: "Day 5 (1/28)", weather: "🐕 黃刀鎮",
+                events: [
+                    { time: "12:00", title: "狗拉雪橇 (Dog Sledding)", desc: "體驗雪地奔馳", mapQuery: "Yellowknife", weatherQuery: "" },
+                    { time: "22:00", title: "極光狩獵 Day 2", desc: "再次追極光", mapQuery: "", weatherQuery: "" }
+                ]
+            },
+            {
+                date: "Day 6 (1/29)", weather: "🏙️ 溫哥華",
+                events: [
+                    { time: "17:10", title: "飛往溫哥華", desc: "AC8479, 18:58 抵達", mapQuery: "Yellowknife Airport", weatherQuery: "" },
+                    { time: "20:00", title: "入住溫哥華飯店", desc: "", mapQuery: "Vancouver", weatherQuery: "Vancouver" }
+                ]
+            },
+            {
+                date: "Day 7 (1/30)", weather: "🌲 溫哥華",
+                events: [
+                    { time: "10:00", title: "史丹利公園 (Stanley Park)", desc: "圖騰柱、獅門大橋", mapQuery: "Stanley Park", weatherQuery: "Vancouver" },
+                    { time: "14:00", title: "固蘭島 (Granville Island)", desc: "公眾市場、工藝品", mapQuery: "Granville Island", weatherQuery: "" }
+                ]
+            },
+            {
+                date: "Day 8 (1/31)", weather: "🌉 溫哥華",
+                events: [
+                    { time: "10:00", title: "卡皮拉諾吊橋公園", desc: "Capilano Suspension Bridge", mapQuery: "Capilano Suspension Bridge", weatherQuery: "" },
+                    { time: "15:00", title: "煤氣鎮 (Gastown)", desc: "蒸汽鐘 Steam Clock", mapQuery: "Gastown Steam Clock", weatherQuery: "" },
+                    { time: "22:00", title: "前往機場", desc: "準備搭機", mapQuery: "YVR Airport", weatherQuery: "" }
+                ]
+            },
+            {
+                date: "Day 9 (2/01)", weather: "✈️",
+                events: [
+                    { time: "00:35", title: "飛往台北", desc: "CI031, 預計 2/2 05:40 抵達", mapQuery: "", weatherQuery: "" }
+                ]
             }
+        ],
+        checklist: [
+            { id: 1, text: "護照 (有效期限內)", checked: false },
+            { id: 2, text: "加拿大 eTA 簽證", checked: false },
+            { id: 3, text: "美國 ESTA (若轉機需要)", checked: false },
+            { id: 4, text: "禦寒衣物 (羽絨、發熱衣)", checked: false },
+            { id: 5, text: "手套、毛帽、圍巾", checked: false },
+            { id: 6, text: "墨鏡 (雪地反光)", checked: false },
+            { id: 7, text: "保濕乳液/護唇膏", checked: false }
+        ],
+        memos: [
+            { id: 1, text: "緊急電話: 911" },
+            { id: 2, text: "電壓: 110V (同台灣)" },
+            { id: 3, text: "小費: 餐廳約 15-20%" }
+        ],
+        guides: [
+            { title: "伴手禮推薦", content: "冰酒 (Ice Wine)、楓糖漿、楓糖餅乾 (Dare)、Roots 服飾、Lululemon", mapQuery: "" },
+            { title: "入境須知", content: "免稅額約 CAD $800。液體隨身攜帶不超過 100ml。", mapQuery: "" }
+        ],
+        emergency: [
+            { id: 1, title: "外交部緊急聯絡", content: "駐溫哥華辦事處: +1-604-377-8730" }
+        ],
+        notes: [
+            { id: 1, title: "時差", content: "溫哥華慢台灣 16 小時 (班夫/黃刀鎮慢 15 小時)" }
+        ],
+        expenses: [
+            { id: 1, item: "機票-TPE/YVR來回", amount: 34397, currency: "TWD", category: "transport", payer: "我", splitWith: ["我"], photo: "" },
+            { id: 2, item: "機票-YVR/YYC單程", amount: 3980, currency: "TWD", category: "transport", payer: "我", splitWith: ["我"], photo: "" },
+            { id: 3, item: "巴士-卡加利/班夫", amount: 642, currency: "TWD", category: "transport", payer: "我", splitWith: ["我"], photo: "" },
+            { id: 4, item: "機票-YYC/YZF單程", amount: 10503, currency: "TWD", category: "transport", payer: "我", splitWith: ["我"], photo: "" },
+            { id: 5, item: "機票-YZF/YVR單程", amount: 15322, currency: "TWD", category: "transport", payer: "我", splitWith: ["我"], photo: "" },
+            { id: 6, item: "簽證-加拿大eTA", amount: 165, currency: "TWD", category: "other", payer: "我", splitWith: ["我"], photo: "" },
+            { id: 7, item: "住宿-班夫(2晚)", amount: 4562, currency: "TWD", category: "stay", payer: "我", splitWith: ["我"], photo: "" },
+            { id: 8, item: "行程-班夫一日遊", amount: 4614, currency: "TWD", category: "ticket", payer: "我", splitWith: ["我"], photo: "" },
+            { id: 9, item: "行程-黃刀鎮極光", amount: 15397, currency: "TWD", category: "ticket", payer: "我", splitWith: ["我"], photo: "" },
+            { id: 10, item: "行程-雪橇犬", amount: 3838, currency: "TWD", category: "ticket", payer: "我", splitWith: ["我"], photo: "" }
+        ],
+        companions: ["我"], transport: [], tickets: []
+    };
+
+    function initApp() {
+        // Load Index
+        tripIndex = JSON.parse(localStorage.getItem('travel_app_index')) || [];
+        
+        // 1. Ensure Default Kyushu Trip exists (if empty)
+        if (tripIndex.length === 0) {
+            const kyushuId = 'trip_kyushu_demo';
+            localStorage.setItem('trip_data_' + kyushuId, JSON.stringify(DEFAULT_DATA_TEMPLATE));
+            tripIndex.push({ id: kyushuId, title: DEFAULT_DATA_TEMPLATE.title });
         }
+
+        // 2. Ensure Canada Trip exists (Auto-add feature)
+        const hasCanada = tripIndex.some(t => t.title.includes("加拿大"));
+        if (!hasCanada) {
+            const canadaId = 'trip_canada_2025';
+            localStorage.setItem('trip_data_' + canadaId, JSON.stringify(CANADA_DATA_TEMPLATE));
+            tripIndex.push({ id: canadaId, title: CANADA_DATA_TEMPLATE.title });
+            // Save index update
+            localStorage.setItem('travel_app_index', JSON.stringify(tripIndex));
+            // Show alert on first load
+            setTimeout(() => showAlert("🎉 已自動為您新增「🇨🇦 2025 加拿大極光之旅」手帳！<br>請點擊左上角 📚 切換查看。"), 500);
+        }
+
+        // 3. Load current or first trip
+        currentTripId = localStorage.getItem('travel_app_current_id');
         if (!currentTripId || !tripIndex.find(t => t.id === currentTripId)) {
             currentTripId = tripIndex[0].id;
         }
@@ -381,12 +572,303 @@
     }
 
     function saveData() {
-        localStorage.setItem('trip_data_' + currentTripId, JSON.stringify(appData));
-        const idx = tripIndex.findIndex(t => t.id === currentTripId);
-        if (idx !== -1) {
-            tripIndex[idx].title = appData.title;
-            localStorage.setItem('travel_app_index', JSON.stringify(tripIndex));
+        try {
+            localStorage.setItem('trip_data_' + currentTripId, JSON.stringify(appData));
+            const idx = tripIndex.findIndex(t => t.id === currentTripId);
+            if (idx !== -1) {
+                tripIndex[idx].title = appData.title;
+                localStorage.setItem('travel_app_index', JSON.stringify(tripIndex));
+            }
+        } catch (e) {
+            if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+                showAlert("⚠️ 儲存空間已滿！<br>圖片可能太多了，請刪除一些圖片或舊的旅程。");
+            } else {
+                console.error(e);
+                showAlert("⚠️ 儲存失敗，發生未知錯誤。");
+            }
         }
+    }
+
+    /* --- CSV EXPORT/IMPORT CORE --- */
+    function arrayToCSV(arr) {
+        if (!arr || !arr.length) return "";
+        const keys = Object.keys(arr[0]);
+        const header = keys.join(",");
+        const rows = arr.map(obj => {
+            return keys.map(k => {
+                let val = obj[k] === null || obj[k] === undefined ? "" : String(obj[k]);
+                val = val.replace(/"/g, '""'); // Escape double quotes
+                if (val.includes(",") || val.includes("\n") || val.includes('"')) {
+                    val = `"${val}"`;
+                }
+                return val;
+            }).join(",");
+        }).join("\n");
+        return header + "\n" + rows;
+    }
+
+    function csvToArray(str, delimiter = ",") {
+        const headers = str.slice(0, str.indexOf("\n")).split(delimiter).map(h => h.trim());
+        const rows = str.slice(str.indexOf("\n") + 1).split("\n");
+        const arr = [];
+        rows.forEach(row => {
+            if(!row.trim()) return;
+            const values = [];
+            let inQuote = false;
+            let val = "";
+            for(let i=0; i<row.length; i++) {
+                const char = row[i];
+                if(char === '"' && row[i+1] === '"') { val += '"'; i++; }
+                else if(char === '"') { inQuote = !inQuote; }
+                else if(char === delimiter && !inQuote) { values.push(val); val = ""; }
+                else { val += char; }
+            }
+            values.push(val);
+            const obj = {};
+            headers.forEach((h, i) => obj[h] = values[i]);
+            arr.push(obj);
+        });
+        return arr;
+    }
+
+    function exportAllCSV() {
+        const data = [];
+        
+        // Flight
+        if(appData.booking.flights) {
+            data.push({ DataType: 'flight', Detail: appData.booking.flights });
+        }
+        
+        // Hotels
+        appData.booking.hotels.forEach(h => {
+            data.push({ DataType: 'hotel', Subject: h.name, Detail: h.desc, Location: h.mapQuery });
+        });
+
+        // Itinerary
+        appData.itinerary.forEach(day => {
+            day.events.forEach(ev => {
+                data.push({
+                    DataType: 'itinerary',
+                    Date: day.date,
+                    Status: day.weather,
+                    Time: ev.time,
+                    Subject: ev.title,
+                    Detail: ev.desc,
+                    Location: ev.mapQuery,
+                    Metadata: ev.weatherQuery
+                });
+            });
+        });
+
+        // Transport
+        appData.transport.forEach(t => {
+            data.push({
+                DataType: 'transport',
+                Date: t.date,
+                Subject: t.type,
+                From: t.from,
+                To: t.to,
+                Detail: t.note,
+                Location: t.link
+            });
+        });
+
+        // Tickets
+        appData.tickets.forEach(t => {
+            data.push({ DataType: 'ticket', Date: t.date, Subject: t.title, Detail: t.note });
+        });
+
+        // Expenses
+        appData.expenses.forEach(e => {
+            data.push({
+                DataType: 'expense',
+                Subject: e.item,
+                Amount: e.amount,
+                Currency: e.currency,
+                Category: e.category,
+                Payer: e.payer,
+                Metadata: e.splitWith.join('|')
+            });
+        });
+
+        // Guides
+        appData.guides.forEach(g => {
+            data.push({ DataType: 'guide', Subject: g.title, Detail: g.content, Location: g.mapQuery });
+        });
+
+        // Lists
+        appData.checklist.forEach(i => data.push({ DataType: 'checklist', Subject: i.text, Status: i.checked }));
+        appData.memos.forEach(i => data.push({ DataType: 'memo', Subject: i.text }));
+        appData.emergency.forEach(i => data.push({ DataType: 'emergency', Subject: i.title, Detail: i.content }));
+        appData.notes.forEach(i => data.push({ DataType: 'note', Subject: i.title, Detail: i.content }));
+
+        if(data.length === 0) { showAlert("無資料可匯出"); return; }
+
+        // Standardize columns
+        const allKeys = ['DataType', 'Date', 'Time', 'Subject', 'Detail', 'Location', 'From', 'To', 'Amount', 'Currency', 'Category', 'Payer', 'Status', 'Metadata'];
+        const formattedData = data.map(item => {
+            const row = {};
+            allKeys.forEach(k => row[k] = item[k] || '');
+            return row;
+        });
+
+        const csvContent = "\uFEFF" + arrayToCSV(formattedData);
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = appData.title + "_AllData.csv";
+        link.click();
+    }
+
+    function openImportCSVModal() {
+        const html = `
+            <div class="form-group">
+                <label class="form-label">貼上 CSV 內容 (包含標題列)</label>
+                <textarea id="import-csv-text" class="form-textarea" style="height:200px; font-family:monospace; font-size:12px;" placeholder="DataType,Date,Time,Subject...\n..."></textarea>
+            </div>
+            <div style="font-size:11px; color:var(--danger); margin-top:5px;">⚠️ 匯入將會「覆蓋」目前的所有資料，請確認 CSV 格式正確。</div>
+        `;
+        openModal("匯入 CSV (全資料)", html, `<button onclick="closeModal()" class="btn-cancel">取消</button><button onclick="processCSVImport()" class="btn-save">確認匯入</button>`);
+    }
+
+    function processCSVImport() {
+        const text = document.getElementById('import-csv-text').value;
+        if(!text.trim()) return;
+
+        try {
+            const rawData = csvToArray(text);
+            
+            // Reset Data Arrays
+            const newBooking = { flights: "", hotels: [] };
+            const newItinerary = [];
+            const newTransport = [];
+            const newTickets = [];
+            const newExpenses = [];
+            const newGuides = [];
+            const newChecklist = [];
+            const newMemos = [];
+            const newEmergency = [];
+            const newNotes = [];
+
+            // Helper for Itinerary
+            let currentDay = null;
+
+            rawData.forEach(row => {
+                const type = (row.DataType || "").toLowerCase();
+                const subj = row.Subject || "";
+                
+                if (type === 'flight' || type === 'flight_info') newBooking.flights = row.Detail || "";
+                
+                else if (type === 'hotel') newBooking.hotels.push({ name: subj, desc: row.Detail, mapQuery: row.Location });
+                
+                else if (type === 'itinerary') {
+                    if (!row.Date) return;
+                    if (!currentDay || currentDay.date !== row.Date) {
+                        if(currentDay) newItinerary.push(currentDay);
+                        currentDay = { date: row.Date, weather: row.Status || "☀️", events: [] };
+                    }
+                    if (subj) {
+                        currentDay.events.push({
+                            time: row.Time || "", title: subj, desc: row.Detail || "", 
+                            mapQuery: row.Location || "", weatherQuery: row.Metadata || ""
+                        });
+                    }
+                }
+                
+                else if (type === 'transport') newTransport.push({ type: subj, date: row.Date, from: row.From, to: row.To, note: row.Detail, link: row.Location });
+                
+                else if (type === 'ticket') newTickets.push({ title: subj, date: row.Date, note: row.Detail });
+                
+                else if (type === 'expense') {
+                    newExpenses.push({
+                        id: Date.now() + Math.random(), item: subj, amount: parseFloat(row.Amount) || 0,
+                        currency: row.Currency || "JPY", category: row.Category || "food",
+                        payer: row.Payer || "我", splitWith: row.Metadata ? row.Metadata.split('|') : ["我"], photo: ""
+                    });
+                }
+                
+                else if (type === 'guide') newGuides.push({ title: subj, content: row.Detail, mapQuery: row.Location });
+                
+                else if (type === 'checklist') newChecklist.push({ text: subj, checked: (row.Status === 'true' || row.Status === true) });
+                else if (type === 'memo') newMemos.push({ text: subj });
+                else if (type === 'emergency') newEmergency.push({ title: subj, content: row.Detail });
+                else if (type === 'note') newNotes.push({ title: subj, content: row.Detail });
+            });
+
+            if(currentDay) newItinerary.push(currentDay);
+
+            // Apply new data
+            appData.booking = newBooking;
+            appData.itinerary = newItinerary;
+            appData.transport = newTransport;
+            appData.tickets = newTickets;
+            appData.expenses = newExpenses;
+            appData.guides = newGuides;
+            appData.checklist = newChecklist;
+            appData.memos = newMemos;
+            appData.emergency = newEmergency;
+            appData.notes = newNotes;
+
+            saveData();
+            refreshAllUI();
+            showAlert("✅ 所有資料匯入成功！");
+
+        } catch(e) {
+            console.error(e);
+            showAlert("解析失敗，請檢查 CSV 格式。\n" + e.message);
+        }
+    }
+
+    /* --- BACKUP & RESTORE (Existing) --- */
+    function downloadBackup() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", appData.title + "_Backup.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
+    function restoreBackup(input) {
+        const file = input.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if(!imported.title) throw new Error("無效的檔案格式");
+                openConfirm("確定要還原此檔案嗎？目前的資料將被覆蓋。", () => {
+                    appData = imported;
+                    saveData();
+                    refreshAllUI();
+                    showAlert("✅ 還原成功！");
+                    input.value = ''; 
+                });
+            } catch(err) {
+                showAlert("❌ 檔案讀取失敗，請確認格式是否正確。");
+            }
+        };
+        reader.readAsText(file);
+    }
+    
+    /* --- COPY ITINERARY --- */
+    function copyItineraryText() {
+        let text = `【${appData.title}】\n${appData.dates}\n\n`;
+        appData.itinerary.forEach(day => {
+            text += `📅 ${day.date} (${day.weather})\n`;
+            day.events.forEach(ev => {
+                text += `  • ${ev.time} ${ev.title}\n`;
+                if(ev.desc) text += `    註: ${ev.desc}\n`;
+            });
+            text += `\n`;
+        });
+        
+        navigator.clipboard.writeText(text).then(() => {
+            showAlert("📋 行程已複製到剪貼簿！");
+        }).catch(err => {
+            showAlert("複製失敗，請手動選取複製。");
+        });
     }
 
     function createNewTrip(isSilent = false, customTitle = null) {
@@ -402,26 +884,18 @@
             newData.transport = [];
             newData.tickets = [];
         }
-        localStorage.setItem('trip_data_' + newId, JSON.stringify(newData));
-        tripIndex.push({ id: newId, title: newData.title });
-        localStorage.setItem('travel_app_index', JSON.stringify(tripIndex));
-        loadTrip(newId);
-        if(!isSilent) openTripManager();
+        
+        try {
+            localStorage.setItem('trip_data_' + newId, JSON.stringify(newData));
+            tripIndex.push({ id: newId, title: newData.title });
+            localStorage.setItem('travel_app_index', JSON.stringify(tripIndex));
+            loadTrip(newId);
+            if(!isSilent) openTripManager();
+        } catch(e) {
+            showAlert("無法建立新旅程：儲存空間不足");
+        }
     }
 
-    function deleteCurrentTrip() {
-        openConfirm("確定要刪除整本手帳嗎？(無法復原)", () => {
-            localStorage.removeItem('trip_data_' + currentTripId);
-            tripIndex = tripIndex.filter(t => t.id !== currentTripId);
-            localStorage.setItem('travel_app_index', JSON.stringify(tripIndex));
-            if (tripIndex.length > 0) {
-                loadTrip(tripIndex[0].id);
-            } else {
-                createNewTrip(true, "🌸 九州賞櫻手帳");
-            }
-        });
-    }
-    
     function deleteSpecificTrip(id) {
         openConfirm("刪除此旅程？", () => {
             localStorage.removeItem('trip_data_' + id);
@@ -447,7 +921,20 @@
         openModal("我的手帳列表", html, `<button onclick="closeModal()" class="btn-cancel">關閉</button>`);
     }
 
-    function refreshAllUI() { setTheme(appData.theme); renderHeader(); renderBooking(); renderItinerary(); renderGuide(); renderExpenses(); refreshLists(); renderTransport(); renderTickets(); updateCalc(); initWallet(); }
+    function refreshAllUI() { 
+        setTheme(appData.theme); 
+        renderHeader(); 
+        renderBooking(); 
+        renderItinerary(); 
+        renderGuide(); 
+        renderExpenses(); 
+        refreshLists(); 
+        renderTransport(); 
+        renderTickets(); 
+        updateCalc(); 
+        initWallet(); 
+        fetchHomeWeather(); // New: Fetch Weather on refresh
+    }
 
     /* --- THEME & HEADER --- */
     function setTheme(theme) { document.documentElement.setAttribute('data-theme', theme); appData.theme = theme; saveData(); }
@@ -550,48 +1037,159 @@
     }
     function updateCalc() {
         const c = document.getElementById('calc-currency').value || 'JPY'; const r = appData.rates[c] || 1; document.getElementById('calc-rate').value = r;
-        try { const val = eval(document.getElementById('calc-input').value); document.getElementById('calc-result-raw').innerText = (val||0).toFixed(2); document.getElementById('calc-result-twd').innerText = Math.round((val||0)*r).toLocaleString(); } catch(e){}
+        try { 
+            const inputVal = document.getElementById('calc-input').value;
+            // Basic security check for eval
+            if (/[^0-9+\-*/().\s]/.test(inputVal)) throw new Error("Invalid chars");
+            const val = eval(inputVal); 
+            document.getElementById('calc-result-raw').innerText = (val||0).toFixed(2); 
+            document.getElementById('calc-result-twd').innerText = Math.round((val||0)*r).toLocaleString(); 
+        } catch(e){
+            // Silent catch
+        }
     }
     function manualRateUpdate() { appData.rates[document.getElementById('calc-currency').value] = parseFloat(document.getElementById('calc-rate').value); saveData(); updateCalc(); renderExpenses(); }
     function openCurrencyManager() { openModal("管理幣別", `<div style="display:flex;gap:5px;margin-bottom:10px;"><input id="new-c" class="form-input" placeholder="CODE"><input id="new-r" class="form-input" type="number" placeholder="Rate"><button class="btn-save" onclick="if(document.getElementById('new-c').value){appData.activeCurrencies.push(document.getElementById('new-c').value);appData.rates[document.getElementById('new-c').value]=document.getElementById('new-r').value;saveData();initWallet();closeModal();}">+</button></div><div>${appData.activeCurrencies.map(c=>`<button onclick="if('${c}'!=='TWD'){appData.activeCurrencies=appData.activeCurrencies.filter(x=>x!=='${c}');saveData();initWallet();closeModal();}" style="margin:2px;padding:5px;">${c} ✕</button>`).join('')}</div>`, `<button onclick="closeModal()" class="btn-cancel">關閉</button>`); }
-    function addExpenseFromCalc() { try{ openAddExpenseModal(-1, {amount: eval(document.getElementById('calc-input').value), currency: document.getElementById('calc-currency').value}); }catch(e){} }
+    function addExpenseFromCalc() { 
+        try{ 
+            const val = eval(document.getElementById('calc-input').value);
+            if(isNaN(val)) throw new Error("NaN");
+            openAddExpenseModal(-1, {amount: val, currency: document.getElementById('calc-currency').value}); 
+        } catch(e){
+            showAlert("請輸入有效的數字或算式");
+        } 
+    }
+    
+    // EXPENSE CATEGORIES
+    const EXP_CATS = [
+        {val: 'food', icon: '🍔', name: '餐飲'},
+        {val: 'transport', icon: '🚗', name: '交通'},
+        {val: 'shop', icon: '🛍️', name: '購物'},
+        {val: 'stay', icon: '🏨', name: '住宿'},
+        {val: 'ticket', icon: '🎫', name: '門票'},
+        {val: 'other', icon: '💸', name: '其他'}
+    ];
+
     function openAddExpenseModal(idx, pre={}) {
-        const d = idx>=0 ? appData.expenses[idx] : {item:'', amount:pre.amount||'', currency:pre.currency||'JPY', payer:'我', splitWith:appData.companions, photo:''};
-        const html = `<div class="form-group"><label class="form-label">項目</label><input id="ex-item" value="${d.item}" class="form-input"></div><div class="form-group"><label class="form-label">金額</label><div style="display:flex;gap:10px;"><input id="ex-amt" value="${d.amount}" class="form-input"><select id="ex-cur" class="form-select" style="width:80px;">${appData.activeCurrencies.map(c=>`<option ${c===d.currency?'selected':''}>${c}</option>`).join('')}</select></div></div><div class="form-group"><label class="form-label">誰付</label><select id="ex-pay" class="form-select">${appData.companions.map(c=>`<option ${c===d.payer?'selected':''}>${c}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">分帳</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">${appData.companions.map(c=>`<label class="checkbox-wrapper"><input type="checkbox" class="sp-chk" value="${c}" ${d.splitWith.includes(c)?'checked':''}>${c}</label>`).join('')}</div></div><div class="form-group"><label class="form-label">圖片</label><div onclick="document.getElementById('ex-file').click()" id="ex-prev" style="height:60px;background:#eee;display:flex;align-items:center;justify-content:center;">${d.photo?'圖':'📷'}</div><input type="file" id="ex-file" style="display:none;" onchange="handleImg(this,'ex-prev')"></div>`;
+        const d = idx>=0 ? appData.expenses[idx] : {item:'', amount:pre.amount||'', currency:pre.currency||'JPY', payer:'我', splitWith:appData.companions, photo:'', category:'food'};
+        
+        // Category Options
+        const catOpts = EXP_CATS.map(c => `<option value="${c.val}" ${d.category===c.val?'selected':''}>${c.icon} ${c.name}</option>`).join('');
+
+        const html = `
+        <div style="display:flex; gap:10px;">
+            <div class="form-group" style="flex:1;">
+                <label class="form-label">類別</label>
+                <select id="ex-cat" class="form-select">${catOpts}</select>
+            </div>
+            <div class="form-group" style="flex:2;">
+                <label class="form-label">項目</label>
+                <input id="ex-item" value="${d.item}" class="form-input">
+            </div>
+        </div>
+        <div class="form-group"><label class="form-label">金額</label><div style="display:flex;gap:10px;"><input id="ex-amt" value="${d.amount}" class="form-input"><select id="ex-cur" class="form-select" style="width:80px;">${appData.activeCurrencies.map(c=>`<option ${c===d.currency?'selected':''}>${c}</option>`).join('')}</select></div></div><div class="form-group"><label class="form-label">誰付</label><select id="ex-pay" class="form-select">${appData.companions.map(c=>`<option ${c===d.payer?'selected':''}>${c}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">分帳</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">${appData.companions.map(c=>`<label class="checkbox-wrapper"><input type="checkbox" class="sp-chk" value="${c}" ${d.splitWith.includes(c)?'checked':''}>${c}</label>`).join('')}</div></div><div class="form-group"><label class="form-label">圖片</label><div onclick="document.getElementById('ex-file').click()" id="ex-prev" style="height:60px;background:#eee;display:flex;align-items:center;justify-content:center;">${d.photo?'圖':'📷'}</div><input type="file" id="ex-file" style="display:none;" onchange="handleImg(this,'ex-prev')"></div>`;
         openModal(idx>=0?"修改":"新增", html, `<button onclick="closeModal()" class="btn-cancel">取消</button><button onclick="saveEx(${idx})" class="btn-save">儲存</button>`);
         if(d.photo) document.getElementById('ex-prev').dataset.val = d.photo;
     }
+    
     function saveEx(idx) {
         const p = document.getElementById('ex-prev').dataset.val || (idx>=0?appData.expenses[idx].photo:'');
         const sp = Array.from(document.querySelectorAll('.sp-chk:checked')).map(c=>c.value);
-        const n = { id:Date.now(), item:document.getElementById('ex-item').value, amount:parseFloat(document.getElementById('ex-amt').value), currency:document.getElementById('ex-cur').value, payer:document.getElementById('ex-pay').value, splitWith:sp, photo:p };
+        const cat = document.getElementById('ex-cat').value;
+        const n = { id:Date.now(), item:document.getElementById('ex-item').value, amount:parseFloat(document.getElementById('ex-amt').value), currency:document.getElementById('ex-cur').value, payer:document.getElementById('ex-pay').value, splitWith:sp, photo:p, category: cat };
         if(idx>=0) appData.expenses[idx]=n; else appData.expenses.unshift(n); saveData(); renderExpenses(); closeModal();
     }
+    
     function renderExpenses() {
         let total = 0; let myShare = 0;
         document.getElementById('expense-list').innerHTML = appData.expenses.map((e,i) => {
             const r = appData.rates[e.currency]||1; total += e.amount*r;
             if(e.splitWith.includes('我')) myShare += (e.amount/e.splitWith.length)*r;
-            return `<div class="expense-item"><div class="expense-thumb" onclick="event.stopPropagation();viewImage('${e.photo}')" style="${!e.photo?'display:flex;align-items:center;justify-content:center;color:#ccc':''}">${e.photo?`<img src="${e.photo}" style="height:100%">`:'📷'}</div><div style="flex:1" onclick="openAddExpenseModal(${i})"><div style="font-weight:bold;">${e.item}</div><div style="font-size:12px;color:#666;">${e.amount} ${e.currency} (${e.payer})</div></div><div style="text-align:right" onclick="openAddExpenseModal(${i})"><div>≈NT$ ${Math.round(e.amount*r)}</div></div><button onclick="event.stopPropagation();openConfirm('刪除？', ()=>{appData.expenses.splice(${i},1);saveData();renderExpenses();})" class="btn-delete-icon">🗑️</button></div>`;
+            
+            // Resolve icon
+            const catObj = EXP_CATS.find(c=>c.val === e.category) || EXP_CATS[5];
+            const icon = catObj.icon;
+
+            return `<div class="expense-item">
+                <div class="expense-thumb" onclick="event.stopPropagation();viewImage('${e.photo}')" style="${!e.photo?'background:#f0f0f0;color:#ccc':''}">
+                    ${e.photo ? `<img src="${e.photo}" style="height:100%;width:100%;object-fit:cover;border-radius:8px;">` : icon}
+                </div>
+                <div style="flex:1" onclick="openAddExpenseModal(${i})">
+                    <div style="font-weight:bold;">${e.item}</div>
+                    <div style="font-size:12px;color:#666;">${e.amount} ${e.currency} (${e.payer})</div>
+                </div>
+                <div style="text-align:right" onclick="openAddExpenseModal(${i})">
+                    <div>≈NT$ ${Math.round(e.amount*r)}</div>
+                </div>
+                <button onclick="event.stopPropagation();openConfirm('刪除？', ()=>{appData.expenses.splice(${i},1);saveData();renderExpenses();})" class="btn-delete-icon">🗑️</button>
+            </div>`;
         }).join('');
         document.getElementById('total-grand-twd').innerText = Math.round(total);
         document.getElementById('my-share-display').innerText = '我應付: NT$ ' + Math.round(myShare);
     }
+    
     function openCompanionsModal() { openModal("旅伴", `<div id="comp-list">${appData.companions.map(c=>`<div style="display:flex;margin-bottom:5px;"><input class="form-input c-name" value="${c}"><button onclick="this.parentElement.remove()">✕</button></div>`).join('')}</div><button onclick="document.getElementById('comp-list').insertAdjacentHTML('beforeend', '<div><input class=\\'form-input c-name\\'></div>')">新增</button>`, `<button onclick="appData.companions=Array.from(document.querySelectorAll('.c-name')).map(i=>i.value).filter(v=>v);saveData();closeModal();" class="btn-save">儲存</button>`); }
     function clearExpenses() { openConfirm("清除所有？", ()=>{appData.expenses=[];saveData();renderExpenses();}); }
 
-    // BOOKING & ITINERARY
-    function renderBooking() { document.getElementById('booking-flights').innerText=appData.booking.flights; document.getElementById('booking-hotels-container').innerHTML=appData.booking.hotels.map((h,i)=>`<div class="list-item"><div style="flex:1;"><b>${h.name}</b><div style="font-size:13px;">${h.desc}</div></div>${h.mapQuery?`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.mapQuery)}" target="_blank" class="btn-action btn-map">📍</a>`:''}<button onclick="openConfirm('刪除?', ()=>{appData.booking.hotels.splice(${i},1);saveData();renderBooking();})" class="btn-delete-icon">✕</button></div>`).join(''); }
+    // BOOKING & ITINERARY (UPDATED)
+    function renderBooking() { 
+        document.getElementById('booking-flights').innerText = appData.booking.flights; 
+        
+        // Updated Hotel Rendering with Edit/Delete
+        document.getElementById('booking-hotels-container').innerHTML = appData.booking.hotels.map((h,i)=>`
+            <div class="list-item">
+                <div style="flex:1;">
+                    <b>${h.name}</b>
+                    <div style="font-size:13px;">${h.desc}</div>
+                </div>
+                <div style="display:flex; gap:5px; align-items:center;">
+                    ${h.mapQuery ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.mapQuery)}" target="_blank" class="btn-action btn-map">📍</a>` : ''}
+                    <button onclick="openHotelModal(${i})" class="btn-edit">✏️</button>
+                    <button onclick="openConfirm('刪除?', ()=>{appData.booking.hotels.splice(${i},1);saveData();renderBooking();})" class="btn-delete-icon">✕</button>
+                </div>
+            </div>`).join(''); 
+    }
     function editBookingText(t) { openModal("編輯", `<textarea id="bt" class="form-textarea" style="height:150px;">${appData.booking[t]}</textarea>`, `<button onclick="appData.booking['${t}']=document.getElementById('bt').value;saveData();renderBooking();closeModal()" class="btn-save">儲存</button>`); }
-    function editBookingHotels() { openModal("新增", `<input id="hn" class="form-input" placeholder="名稱"><input id="hd" class="form-input" placeholder="描述"><input id="hm" class="form-input" placeholder="地圖關鍵字">`, `<button onclick="appData.booking.hotels.push({name:document.getElementById('hn').value, desc:document.getElementById('hd').value, mapQuery:document.getElementById('hm').value});saveData();renderBooking();closeModal()" class="btn-save">儲存</button>`); }
+    
+    // NEW: Hotel Modal
+    function openHotelModal(idx=-1) {
+        const isEdit = idx >= 0;
+        const d = isEdit ? appData.booking.hotels[idx] : { name:'', desc:'', mapQuery:'' };
+        
+        const html = `
+            <div class="form-group"><label class="form-label">住宿名稱</label><input id="hn" value="${d.name}" class="form-input" placeholder="名稱"></div>
+            <div class="form-group"><label class="form-label">描述 / 時間</label><input id="hd" value="${d.desc}" class="form-input" placeholder="例如: Day 1-2"></div>
+            <div class="form-group"><label class="form-label">地圖關鍵字</label><input id="hm" value="${d.mapQuery}" class="form-input" placeholder="用於 Google Maps 搜尋"></div>
+        `;
+        
+        openModal(isEdit ? "編輯住宿" : "新增住宿", html, 
+            `<button onclick="closeModal()" class="btn-cancel">取消</button>
+             <button onclick="saveHotel(${idx})" class="btn-save">儲存</button>`);
+    }
+
+    function saveHotel(idx) {
+        const newVal = {
+            name: document.getElementById('hn').value,
+            desc: document.getElementById('hd').value,
+            mapQuery: document.getElementById('hm').value
+        };
+        
+        if (idx >= 0) {
+            appData.booking.hotels[idx] = newVal;
+        } else {
+            appData.booking.hotels.push(newVal);
+        }
+        
+        saveData();
+        renderBooking();
+        closeModal();
+    }
     
     // SMART WEATHER: Common POI to City mapping
     const POI_MAPPING = {
-        // Taiwan Airports
         "桃園國際機場": "Taoyuan", "桃園機場": "Taoyuan", "TPE": "Taoyuan", "RCTP": "Taoyuan",
         "松山機場": "Taipei", "TSA": "Taipei", "RCSS": "Taipei",
         "小港機場": "Kaohsiung", "KHH": "Kaohsiung", "RCKH": "Kaohsiung",
-        // Japan Airports
         "成田國際機場": "Narita", "成田機場": "Narita", "NRT": "Narita", "RJAA": "Narita",
         "羽田機場": "Tokyo", "HND": "Tokyo", "RJTT": "Tokyo",
         "關西國際機場": "Osaka", "關西機場": "Osaka", "KIX": "Osaka", "RJBB": "Osaka",
@@ -599,16 +1197,44 @@
         "中部國際機場": "Tokoname", "NGO": "Tokoname", "RJGG": "Tokoname",
         "新千歲機場": "Chitose", "CTS": "Chitose", "RJCC": "Chitose",
         "那霸機場": "Naha", "OKA": "Naha", "ROAH": "Naha",
-        // Popular Spots
         "太宰府天滿宮": "Dazaifu", "清水寺": "Kyoto", "淺草寺": "Tokyo", "東京迪士尼": "Urayasu", "環球影城": "Osaka"
     };
+
+    // Shared Geo logic
+    async function getGeoLocation(query) {
+        let searchTerm = query;
+        if (POI_MAPPING[query]) searchTerm = POI_MAPPING[query];
+        
+        const fetchGeo = async (q) => {
+            const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&format=json`);
+            return await res.json();
+        };
+
+        let geo = await fetchGeo(searchTerm);
+
+        if (!geo.results) {
+            const suffixes = ["國際機場", "機場", "空港", "車站", "火車站", "駅", "天滿宮", "神宮", "大社", "公園", "動物園", "遊樂園", "觀光夜市", "夜市", "大學", "高中", "國中", "國小"];
+            let cleanQuery = searchTerm;
+            for (const suffix of suffixes) {
+                if (cleanQuery.endsWith(suffix)) {
+                    cleanQuery = cleanQuery.slice(0, -suffix.length);
+                    break;
+                }
+            }
+            if (cleanQuery !== searchTerm && cleanQuery.length > 1) {
+                const retryGeo = await fetchGeo(cleanQuery);
+                if (retryGeo.results) geo = retryGeo;
+            }
+        }
+        return geo;
+    }
 
     async function fetchRealWeather() {
         const input = document.getElementById('edit-weather'); const btn = document.getElementById('btn-get-weather');
         let query = "";
         
-        // 1. Get raw query
-        const rows = document.querySelectorAll('.event-edit-row');
+        const modalContent = document.getElementById('modal-content');
+        const rows = modalContent.querySelectorAll('.event-edit-row');
         for (let row of rows) {
             const w = row.querySelector('.ewq').value.trim();
             if (w) { query = w; break; }
@@ -622,55 +1248,19 @@
 
         if(!query) { showAlert("無地點可查"); return; }
         
-        // 2. Smart Mapping Check
-        let searchTerm = query;
-        if (POI_MAPPING[query]) {
-            console.log(`Smart map: ${query} -> ${POI_MAPPING[query]}`);
-            searchTerm = POI_MAPPING[query];
-        }
-
         btn.innerText = "⏳"; 
         const originalValue = input.value; 
-        input.value = `搜尋: ${searchTerm}...`;
         
         try {
-            const fetchGeo = async (q) => {
-                const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=5&format=json`);
-                return await res.json();
-            };
-
-            let geo = await fetchGeo(searchTerm);
-            
-            // 3. Retry Logic (Suffix Stripping)
-            if (!geo.results) {
-                const suffixes = ["國際機場", "機場", "空港", "車站", "火車站", "駅", "天滿宮", "神宮", "大社", "公園", "動物園", "遊樂園", "觀光夜市", "夜市", "大學", "高中", "國中", "國小"];
-                let cleanQuery = searchTerm;
-                for (const suffix of suffixes) {
-                    if (cleanQuery.endsWith(suffix)) {
-                        cleanQuery = cleanQuery.slice(0, -suffix.length);
-                        break;
-                    }
-                }
-                if (cleanQuery !== searchTerm && cleanQuery.length > 1) {
-                    console.log(`Retrying with stripped name: ${cleanQuery}`);
-                    const retryGeo = await fetchGeo(cleanQuery);
-                    if (retryGeo.results) geo = retryGeo;
-                }
-            }
-            
+            const geo = await getGeoLocation(query);
             if(!geo.results || geo.results.length === 0) throw new Error("無結果");
             
             const {latitude, longitude, name} = geo.results[0];
             const w = await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&timezone=auto`)).json();
             
-            let icon = "☀️";
-            const code = w.current_weather.weathercode;
-            if (code > 3) icon = "☁️";
-            if (code >= 45 && code <= 48) icon = "🌫️";
-            if (code >= 51 && code <= 67) icon = "🌧️";
-            if (code >= 71 && code <= 86) icon = "❄️";
-            if (code >= 95) icon = "⚡";
+            if (!w.current_weather) throw new Error("Weather data missing");
 
+            let icon = getWeatherIcon(w.current_weather.weathercode);
             input.value = `${icon} ${name} ${w.current_weather.temperature}°C`;
         } catch(e) { 
             console.error(e);
@@ -679,12 +1269,103 @@
         } finally { btn.innerText = "🌍"; }
     }
 
+    // NEW: Fetch Home Weekly Weather (Updated with Clothing Advice)
+    async function fetchHomeWeather() {
+        const container = document.getElementById('weekly-weather-container');
+        const nameDisplay = document.getElementById('weather-loc-name');
+        
+        // Find first location
+        let query = null;
+        if(appData.itinerary.length > 0 && appData.itinerary[0].events.length > 0) {
+            const ev = appData.itinerary[0].events[0];
+            query = ev.weatherQuery || ev.mapQuery || ev.title;
+        }
+
+        if(!query) {
+            container.innerHTML = `<div style="width:100%; text-align:center; padding:10px; color:#aaa;">請先設定行程第一天地點以顯示天氣</div>`;
+            nameDisplay.innerText = "尚無地點";
+            return;
+        }
+
+        nameDisplay.innerText = `搜尋: ${query}...`;
+        
+        try {
+            const geo = await getGeoLocation(query);
+            if(!geo.results || geo.results.length === 0) throw new Error("無結果");
+            
+            const {latitude, longitude, name, country} = geo.results[0];
+            nameDisplay.innerText = `${name}, ${country || ''}`;
+
+            // FIX: Added apparent_temperature parameters
+            const w = await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=weathercode,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min&timezone=auto`)).json();
+            
+            if (!w.daily) {
+                console.error("Weather API Error:", w);
+                throw new Error("無法取得天氣資料");
+            }
+
+            let html = "";
+            w.daily.time.forEach((t, i) => {
+                const date = new Date(t);
+                const dayName = date.toLocaleDateString('zh-TW', {weekday: 'short'});
+                const shortDate = date.toLocaleDateString('zh-TW', {month: 'numeric', day: 'numeric'});
+                const icon = getWeatherIcon(w.daily.weathercode[i]);
+                const max = Math.round(w.daily.temperature_2m_max[i]);
+                const min = Math.round(w.daily.temperature_2m_min[i]);
+                const feelMax = Math.round(w.daily.apparent_temperature_max[i]);
+                const feelMin = Math.round(w.daily.apparent_temperature_min[i]);
+                
+                const advice = getClothingAdvice(feelMax);
+
+                html += `
+                    <div class="weather-day-item">
+                        <div style="font-size:12px; font-weight:bold;">${dayName}</div>
+                        <div style="font-size:10px; opacity:0.7;">${shortDate}</div>
+                        <div class="weather-icon-lg">${icon}</div>
+                        <div style="font-size:13px; margin-bottom:2px;"><b>${max}°</b> <span style="font-size:11px;opacity:0.6">${min}°</span></div>
+                        <div style="font-size:10px; color:#888;">體感 ${feelMax}°</div>
+                        <div class="clothing-advice">${advice}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+
+        } catch(e) {
+            console.error(e);
+            container.innerHTML = `<div style="text-align:center; padding:10px; color:#ff6b6b;">無法取得 "${query}" 的天氣</div>`;
+            nameDisplay.innerText = "錯誤";
+        }
+    }
+
+    function getClothingAdvice(temp) {
+        if (temp >= 30) return "短袖/防曬";
+        if (temp >= 25) return "透氣衣物";
+        if (temp >= 20) return "薄外套";
+        if (temp >= 15) return "夾克/風衣";
+        if (temp >= 10) return "毛衣/大衣";
+        if (temp >= 5) return "羽絨/圍巾";
+        return "重保暖";
+    }
+
+    function getWeatherIcon(code) {
+        if (code === 0) return "☀️";
+        if (code > 0 && code <= 3) return "⛅";
+        if (code >= 45 && code <= 48) return "🌫️";
+        if (code >= 51 && code <= 67) return "🌧️";
+        if (code >= 71 && code <= 86) return "❄️";
+        if (code >= 95) return "⚡";
+        return "❓";
+    }
+
     function renderItinerary() { document.getElementById('itinerary-container').innerHTML=appData.itinerary.map((d,i)=>`<div class="day-card"><div class="day-header"><span>${d.date} ${d.weather}</span><button onclick="editDay(${i})" class="btn-edit" style="color:white;">✏️</button></div><div class="timeline">${d.events.map(e=>`<div class="list-item" style="border:none;"><div style="width:40px;font-size:12px;">${e.time}</div><div style="flex:1"><b>${e.title}</b><div style="font-size:12px;color:#666;">${e.desc}</div>${e.mapQuery?`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.mapQuery)}" target="_blank" class="btn-action btn-map">📍</a>`:''}</div></div>`).join('')}</div></div>`).join(''); }
     function addDay() { appData.itinerary.push({date:`Day ${appData.itinerary.length+1}`, weather:'☀️', events:[]}); saveData(); renderItinerary(); }
     function editDay(i) { const d=appData.itinerary[i]; let html=`<div style="display:flex;gap:5px;margin-bottom:10px;"><input id="ed-date" value="${d.date}" class="form-input"><input id="edit-weather" value="${d.weather}" class="form-input"><button id="btn-get-weather" onclick="fetchRealWeather()">🌍</button></div><div id="ev-list">${d.events.map(e=>`<div class="event-edit-row"><div style="display:flex;gap:5px;margin-bottom:5px;"><input class="form-input et" value="${e.time}" style="width:50px"><input class="form-input eti" value="${e.title}" style="flex:1"></div><input class="form-input ed" value="${e.desc}"><div style="display:flex;gap:5px;margin-top:5px;"><input class="form-input em" value="${e.mapQuery||''}" placeholder="地圖"><input class="form-input ewq" value="${e.weatherQuery||''}" placeholder="天氣地點"></div><button onclick="this.parentElement.remove()" class="btn-remove-event">✕</button></div>`).join('')}</div><button onclick="document.getElementById('ev-list').insertAdjacentHTML('beforeend', '<div class=\\'event-edit-row\\'><div style=\\'display:flex;gap:5px;margin-bottom:5px;\\'><input class=\\'form-input et\\' placeholder=\\'時間\\'><input class=\\'form-input eti\\' placeholder=\\'標題\\'></div><input class=\\'form-input ed\\' placeholder=\\'備註\\'><div style=\\'display:flex;gap:5px;margin-top:5px;\\'><input class=\\'form-input em\\' placeholder=\\'地圖\\'><input class=\\'form-input ewq\\' placeholder=\\'天氣地點\\'></div><button onclick=\\'this.parentElement.remove()\\' class=\\'btn-remove-event\\'>✕</button></div>')" class="btn-add-block">+ 行程</button><button onclick="openConfirm('刪除整天?', ()=>{appData.itinerary.splice(${i},1);saveData();renderItinerary();closeModal();})" class="btn-danger" style="width:100%;margin-top:10px;">刪除整天</button>`; openModal("編輯行程", html, `<button onclick="saveDay(${i})" class="btn-save">儲存</button>`); }
     function saveDay(i) {
-        const evs = Array.from(document.querySelectorAll('.event-edit-row')).map(r=>({time:r.querySelector('.et').value, title:r.querySelector('.eti').value, desc:r.querySelector('.ed').value, mapQuery:r.querySelector('.em').value, weatherQuery:r.querySelector('.ewq').value})).sort((a,b)=>a.time.localeCompare(b.time));
+        const modalContent = document.getElementById('modal-content');
+        const evs = Array.from(modalContent.querySelectorAll('.event-edit-row')).map(r=>({time:r.querySelector('.et').value, title:r.querySelector('.eti').value, desc:r.querySelector('.ed').value, mapQuery:r.querySelector('.em').value, weatherQuery:r.querySelector('.ewq').value})).sort((a,b)=>a.time.localeCompare(b.time));
         appData.itinerary[i].date=document.getElementById('ed-date').value; appData.itinerary[i].weather=document.getElementById('edit-weather').value; appData.itinerary[i].events=evs; saveData(); renderItinerary(); closeModal();
+        // Refresh home weather if first day changed
+        if(i===0) fetchHomeWeather();
     }
     // GUIDE
     function renderGuide() { document.getElementById('guide-container').innerHTML = appData.guides.map((g,i)=>`<div class="card"><h3>${g.title} <button onclick="openConfirm('刪除?', ()=>{appData.guides.splice(${i},1);saveData();renderGuide();})" class="btn-edit">✕</button></h3><p>${g.content}</p>${g.mapQuery?`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(g.mapQuery)}" target="_blank" class="btn-action btn-map">📍</a>`:''}</div>`).join(''); }
