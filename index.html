@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#fff0f5">
-    <title>旅遊手帳 App (Transport Upgrade)</title>
+    <title>旅遊手帳 App (CSV Full)</title>
     <!-- 引入質感字體 -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Zen+Maru+Gothic:wght@500;700&family=Libre+Barcode+39+Text&display=swap" rel="stylesheet">
     <style>
@@ -926,14 +926,6 @@
             <button onclick="addTransportType()" class="btn-secondary" style="padding:5px 10px;">+</button>
         </div>`;
         
-        // Open a secondary modal on top or replace content. Here simpler to replace content but keeping stack is hard without logic.
-        // Let's use confirm/prompt style for simplicity or reuse modal. 
-        // For better UX, let's just use prompt/confirm for now or replace content and add a 'Back' button.
-        // Replacing content:
-        const originalContent = document.getElementById('modal-content').innerHTML;
-        const originalActions = document.querySelector('.modal-actions').innerHTML;
-        const originalTitle = document.getElementById('modal-title').innerText;
-        
         openModal("管理交通工具", html, `<button onclick="openDailyTransportEdit()" class="btn-modal-save">返回</button>`);
     };
 
@@ -1184,17 +1176,139 @@
     function compressImage(input, p1, p2, callback) { if(input.files[0]) { const r = new FileReader(); r.onload = e => { const img = new Image(); img.onload = () => { const c = document.createElement('canvas'); const mw = 800; let w = img.width, h = img.height; if(w>mw) { h*=mw/w; w=mw; } c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h); callback(c.toDataURL('image/jpeg', 0.6)); }; img.src = e.target.result; }; r.readAsDataURL(input.files[0]); } }
 
     /* --- BACKUP & EXPORT --- */
-    function exportAllCSV() {
-        let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-        csvContent += "Type,Date/Item,Details,Cost,Currency\n";
-        appData.itinerary.forEach(d => { d.events.forEach(e => csvContent += `Event,${d.date},${e.title},,\n`); });
-        appData.expenses.forEach(e => { csvContent += `Expense,${e.item},${e.category},${e.amount},${e.currency}\n`; });
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "travel_data.csv");
-        document.body.appendChild(link); link.click();
+    window.arrayToCSV = function(arr) { if (!arr || !arr.length) return ""; const keys = Object.keys(arr[0]); const header = keys.join(","); const rows = arr.map(obj => { return keys.map(k => { let val = obj[k] === null || obj[k] === undefined ? "" : String(obj[k]); val = val.replace(/"/g, '""'); if (val.includes(",") || val.includes("\n") || val.includes('"')) { val = `"${val}"`; } return val; }).join(","); }).join("\n"); return header + "\n" + rows; }
+    window.csvToArray = function(str, delimiter = ",") { const headers = str.slice(0, str.indexOf("\n")).split(delimiter).map(h => h.trim()); const rows = str.slice(str.indexOf("\n") + 1).split("\n"); const arr = []; rows.forEach(row => { if(!row.trim()) return; const values = []; let inQuote = false; let val = ""; for(let i=0; i<row.length; i++) { const char = row[i]; if(char === '"' && row[i+1] === '"') { val += '"'; i++; } else if(char === '"') { inQuote = !inQuote; } else if(char === delimiter && !inQuote) { values.push(val); val = ""; } else { val += char; } } values.push(val); const obj = {}; headers.forEach((h, i) => obj[h] = values[i]); arr.push(obj); }); return arr; }
+    
+    window.exportAllCSV = function() { 
+        const data = []; 
+        if(appData.booking.flights) data.push({ DataType: 'flight', Detail: appData.booking.flights }); 
+        appData.booking.hotels.forEach(h => data.push({ DataType: 'hotel', Subject: h.name, Detail: h.desc, Location: h.mapQuery })); 
+        
+        // Itinerary + Events + Transport
+        appData.itinerary.forEach(day => { 
+            // Events
+            day.events.forEach(ev => data.push({ DataType: 'itinerary', Date: day.date, Status: day.weather, Time: ev.time, Subject: ev.title, Detail: ev.desc, Location: ev.mapQuery, Metadata: ev.weatherQuery })); 
+            // Daily Transport
+            if (day.transport) {
+                day.transport.forEach(t => data.push({ DataType: 'daily_transport', Date: day.date, Time: `${t.depTime}-${t.arrTime}`, Subject: t.type, From: t.from, To: t.to, Detail: 'Daily Transport' }));
+            }
+        }); 
+        
+        // Root Transport (Separate Tab)
+        if (appData.transport) {
+             appData.transport.forEach(t => data.push({ DataType: 'transport', Date: t.date, Subject: t.type, From: t.from, To: t.to, Detail: t.note, Location: t.link })); 
+        }
+        
+        appData.tickets.forEach(t => data.push({ DataType: 'ticket', Date: t.date, Subject: t.title, Detail: t.note })); 
+        appData.expenses.forEach(e => data.push({ DataType: 'expense', Subject: e.item, Amount: e.amount, Currency: e.currency, Category: e.category, Payer: e.payer, Metadata: e.splitWith ? e.splitWith.join('|') : '' })); 
+        appData.shoppingList.forEach(s => data.push({ DataType: 'shop', Subject: s.item, Amount: s.price, Currency: s.currency, Detail: s.desc, Status: s.isBought ? 'Bought' : 'Pending' }));
+        appData.guides.forEach(g => data.push({ DataType: 'guide', Subject: g.title, Detail: g.content, Location: g.mapQuery }));
+        
+        // Helper lists
+        const listTypes = ['checklist', 'memos', 'emergency', 'notes'];
+        listTypes.forEach(type => {
+            if(appData[type]) {
+                appData[type].forEach(item => data.push({ DataType: type, Subject: item.title || item.text, Detail: item.content || '', Status: item.checked ? 'Checked' : '' }));
+            }
+        });
+
+        if(data.length === 0) { alert("無資料可匯出"); return; } 
+        
+        const allKeys = ['DataType', 'Date', 'Time', 'Subject', 'Detail', 'Location', 'From', 'To', 'Amount', 'Currency', 'Category', 'Payer', 'Status', 'Metadata']; 
+        const formattedData = data.map(item => { const row = {}; allKeys.forEach(k => row[k] = item[k] || ''); return row; }); 
+        const csvContent = "\uFEFF" + arrayToCSV(formattedData); 
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }); 
+        const link = document.createElement("a"); 
+        link.href = URL.createObjectURL(blob); 
+        link.download = "Travel_Data.csv"; 
+        link.click(); 
     }
+
+    window.openImportCSVModal = function() { 
+        const html = `<textarea id="import-csv-text" class="form-textarea" style="height:200px;" placeholder="請貼上 CSV 內容... (注意: 此操作會覆蓋現有資料)"></textarea>`; 
+        openModal("匯入 CSV", html, `<button onclick="closeModal()" class="btn-modal-cancel">取消</button><button onclick="processCSVImport()" class="btn-modal-save">匯入</button>`); 
+    }
+
+    window.processCSVImport = function() { 
+        const text = document.getElementById('import-csv-text').value; 
+        if(!text.trim()) return; 
+        
+        try { 
+            const rawData = csvToArray(text); 
+            // Re-initialize appData structures to empty
+            const newBooking = { flights: "", hotels: [] }; 
+            const newItinerary = []; 
+            const newExpenses = []; 
+            const newShopping = [];
+            const newTickets = [];
+            const newTransport = []; // Root transport
+            const newGuides = [];
+            const newLists = { checklist:[], memos:[], emergency:[], notes:[] };
+
+            // Helper to find or create day
+            const getDay = (dateStr, weatherStr) => {
+                let day = newItinerary.find(d => d.date === dateStr);
+                if (!day) {
+                    day = { date: dateStr, weather: weatherStr || "", events: [], transport: [] };
+                    newItinerary.push(day);
+                }
+                return day;
+            };
+
+            rawData.forEach(row => { 
+                const type = (row.DataType || "").toLowerCase(); 
+                
+                if (type === 'flight') newBooking.flights = row.Detail || ""; 
+                else if (type === 'hotel') newBooking.hotels.push({ name: row.Subject, desc: row.Detail, mapQuery: row.Location }); 
+                else if (type === 'itinerary') { 
+                    if (row.Date) { 
+                        const day = getDay(row.Date, row.Status);
+                        if (row.Subject) day.events.push({ time: row.Time, title: row.Subject, desc: row.Detail, mapQuery: row.Location, weatherQuery: row.Metadata }); 
+                    } 
+                } 
+                else if (type === 'daily_transport') {
+                    if (row.Date) {
+                        const day = getDay(row.Date, "");
+                        const [dep, arr] = (row.Time || "-").split('-');
+                        day.transport.push({ depTime: dep, arrTime: arr, type: row.Subject, from: row.From, to: row.To });
+                    }
+                }
+                else if (type === 'transport') {
+                    // Root transport tab items
+                    newTransport.push({ date: row.Date, type: row.Subject, from: row.From, to: row.To, note: row.Detail, link: row.Location });
+                }
+                else if (type === 'ticket') newTickets.push({ date: row.Date, title: row.Subject, note: row.Detail });
+                else if (type === 'expense') newExpenses.push({ id: Date.now() + Math.random(), item: row.Subject, amount: parseFloat(row.Amount)||0, currency: row.Currency, category: row.Category, payer: row.Payer, splitWith: row.Metadata ? row.Metadata.split('|') : [] }); 
+                else if (type === 'shop') newShopping.push({ id: Date.now() + Math.random(), item: row.Subject, price: parseFloat(row.Amount)||0, currency: row.Currency, desc: row.Detail, isBought: row.Status === 'Bought' });
+                else if (type === 'guide') newGuides.push({ title: row.Subject, content: row.Detail, mapQuery: row.Location });
+                else if (newLists[type]) {
+                    newLists[type].push({ title: row.Subject, text: row.Subject, content: row.Detail, checked: row.Status === 'Checked' });
+                }
+            }); 
+            
+            // Assign back
+            appData.booking = newBooking; 
+            appData.itinerary = newItinerary; 
+            appData.expenses = newExpenses; 
+            appData.shoppingList = newShopping;
+            appData.tickets = newTickets;
+            // appData.transport = newTransport; // If you use root transport
+            appData.guides = newGuides;
+            appData.checklist = newLists.checklist;
+            appData.memos = newLists.memos;
+            appData.emergency = newLists.emergency;
+            appData.notes = newLists.notes;
+
+            saveData(); 
+            refreshAllUI(); 
+            closeModal(); 
+            alert("匯入成功！"); 
+        } catch(e) { 
+            console.error(e);
+            alert("解析失敗: " + e.message); 
+        } 
+    }
+
     function downloadBackup() {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData));
         const downloadAnchorNode = document.createElement('a');
